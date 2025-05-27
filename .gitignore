@@ -1,0 +1,23 @@
+# Ignorar todas las carpetas node_modules
+**/node_modules/
+
+# Ignorar archivos de configuración local con credenciales
+**/.env
+
+# Ignorar builds o artefactos transpilados
+**/dist/
+**/build/
+
+# Ignorar reportes de cobertura
+**/coverage/
+
+# Ignorar archivos de log
+**/*.log
+
+# Ignorar configuraciones de IDE/editor
+.vscode/
+.idea/
+
+# Ignorar archivos del sistema operativo
+.DS_Store
+Thumbs.db
