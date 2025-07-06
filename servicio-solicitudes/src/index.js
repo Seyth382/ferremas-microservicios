@@ -1,78 +1,97 @@
-require('dotenv').config();
-const express = require('express');
-const cors    = require('cors');
-const axios   = require('axios');
-const datos   = require('./datos');
+// src/index.js
+require('dotenv').config()
+const express = require('express')
+const cors    = require('cors')
+const axios   = require('axios')
+const datos   = require('./datos')
 
-const URL_PRODUCTOS = process.env.URL_PRODUCTOS;
-const app = express();
-app.use(cors(), express.json());
+const URL_PRODUCTOS = process.env.URL_PRODUCTOS
 
-// 1) Crear solicitud
+const app = express()
+app.use(cors(), express.json())
+
+/**
+ * 1) Crear solicitud
+ */
 app.post('/api/solicitudes', async (req, res) => {
-  const { sucursal, productoId, cantidad } = req.body;
+  const { sucursal, productoId, cantidad } = req.body
   if (!sucursal || productoId == null || cantidad == null) {
     return res.status(400).json({
-      status: 400, error: 'Bad Request',
+      status:  400,
+      error:   'Bad Request',
       message: 'Faltan sucursal/productoId/cantidad',
-      path: '/api/solicitudes'
-    });
+      path:    '/api/solicitudes'
+    })
   }
 
-  // Validar producto y stock
-  let producto;
+  // Validar existencia de producto y stock
+  let producto
   try {
-    producto = (await axios.get(`${URL_PRODUCTOS}/${productoId}`)).data;
+    producto = (await axios.get(`${URL_PRODUCTOS}/${productoId}`)).data
   } catch {
     return res.status(404).json({
-      status: 404, error: 'Not Found',
+      status:  404,
+      error:   'Not Found',
       message: 'Producto no existe',
-      path: '/api/solicitudes'
-    });
+      path:    '/api/solicitudes'
+    })
   }
   if (producto.stock < cantidad) {
     return res.status(409).json({
-      status: 409, error: 'Conflict',
+      status:  409,
+      error:   'Conflict',
       message: 'Stock insuficiente',
-      path: '/api/solicitudes'
-    });
+      path:    '/api/solicitudes'
+    })
   }
 
-  // Crear solicitud en memoria
+  // Crear la solicitud en memoria
   const sol = {
-    id: datos.siguienteId++,
+    id:          datos.siguienteId++,
     sucursal,
     productoId,
     cantidad,
-    fecha: new Date().toISOString()
-  };
-  datos.solicitudes.push(sol);
+    fecha:       new Date().toISOString()
+  }
+  datos.solicitudes.push(sol)
 
-  res.status(201)
-     .location(`/api/solicitudes/${sol.id}`)
-     .json(sol);
-});
+  res
+    .status(201)
+    .location(`/api/solicitudes/${sol.id}`)
+    .json(sol)
+})
 
-// 2) Listar todas las solicitudes
-app.get('/api/solicitudes', (_, res) => {
-  res.json(datos.solicitudes);
-});
+/**
+ * 2) Listar todas las solicitudes
+ */
+app.get('/api/solicitudes', (_req, res) => {
+  res.json(datos.solicitudes)
+})
 
-// 3) Obtener una solicitud por ID
+/**
+ * 3) Obtener una solicitud por ID
+ */
 app.get('/api/solicitudes/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const sol = datos.solicitudes.find(x => x.id === id);
+  const id = Number(req.params.id)
+  const sol = datos.solicitudes.find(x => x.id === id)
   if (!sol) {
     return res.status(404).json({
-      status: 404, error: 'Not Found',
+      status:  404,
+      error:   'Not Found',
       message: 'Solicitud no existe',
-      path: `/api/solicitudes/${id}`
-    });
+      path:    `/api/solicitudes/${id}`
+    })
   }
-  res.json(sol);
-});
+  res.json(sol)
+})
 
-const PUERTO = process.env.PUERTO || 3002;
-app.listen(PUERTO, () =>
-  console.log(`→ Servicio de Solicitudes escuchando en http://localhost:${PUERTO}`)
-);
+// Exporta la app para poder usarla en tests con Supertest
+module.exports = app
+
+// Sólo arranca el servidor si este archivo se ejecuta directamente
+if (require.main === module) {
+  const PUERTO = process.env.PUERTO || 3002
+  app.listen(PUERTO, () =>
+    console.log(`→ Servicio de Solicitudes escuchando en http://localhost:${PUERTO}`)
+  )
+}
